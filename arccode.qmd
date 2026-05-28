@@ -1,0 +1,23 @@
+---
+title: "ARC Figures"
+author: Eva Jarvis
+format: html
+editor: visual
+---
+
+```{r}
+#| label: load-packages-data
+#| message: false
+library(tidyverse)
+library(dplyr)
+library(readxl)
+library(janitor)
+```
+
+```{r}
+#| label: cps-pi-overlap
+frequencies_cps <- read_excel("Frequencies PI and Cxn.xlsx")
+
+frequencies_cps_clean <- clean_names(frequencies_cps)
+```
+
