@@ -17,7 +17,44 @@ library(janitor)
 ```{r}
 #| label: cps-pi-overlap
 frequencies_cps <- read_excel("Frequencies PI and Cxn.xlsx")
+frequencies_cps_copy <- read_excel("Frequencies PI and Cxn to CPS - Copy.xlsx")
+frequencies_cps_copy2 <- read_excel("Frequencies PI and Cxn to CPS - Copy2 (3).xlsx")
 
-frequencies_cps_clean <- clean_names(frequencies_cps)
+frequencies_copy <- clean_names(frequencies_cps_copy)
+frequencies_cps <- clean_names(frequencies_cps)
+frequencies_copy2 <- clean_names(frequencies_cps_copy2)
 ```
 
+```{r}
+#| label: graph-
+#| fig-width: 9
+#| fig-height: 4
+frequencies_pivoted <- frequencies_copy2 |>
+  pivot_longer(cols = c(overall, men, women, white, black, hispanic),
+               names_to = "demographic",
+               values_to = "proportion") |>
+  filter(!is.na(proportion)) |>
+  mutate(race = case_when(
+    demographic %in% c("white", "black", "hispanic") ~ demographic,
+    TRUE ~ "overall"
+  ),
+  gender = case_when(demographic %in% c("men", "women") ~ demographic,
+                     TRUE ~ "overall")) |>
+  select(-demographic)
+
+frequencies_pivoted |>
+  ggplot(aes(x = proportion, y = clean_name, 
+             color = race, shape = gender)) +
+  geom_point(size = 2, 
+             position = position_jitter(height = .2), 
+             show.legend = TRUE) +
+  facet_wrap(~denominator, scales = "free_y") +
+  theme_bw() +
+  guides(fill = guide_legend(
+    override.aes = list(shape = 21, color = "black"))) +
+  scale_y_discrete(labels = label_wrap_gen((width = 25))) +
+  xlim(0, 0.75) +
+  labs(title = "CPS and Parental Incarceration",
+       x = "Proportion of Total Population",
+       y = "Condition")
+```
