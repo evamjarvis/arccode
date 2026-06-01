@@ -71,7 +71,7 @@ frequencies_pivoted |>
   scale_y_discrete(labels = label_wrap_gen((width = 25))) +
   xlim(0, 0.75) +
   labs(title = "CPS Contact and Parental Incarceration",
-       x = "Proportion of Total Population",
+       x = "Proportion of Population",
        y = "Condition",
        shape = "Race/Ethnicity",
        fill = "Gender")
