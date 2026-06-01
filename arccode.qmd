@@ -45,7 +45,10 @@ frequencies_pivoted <- frequencies_cps |>
   ),
   gender = case_when(demographic %in% c("male", "female") ~ demographic,
                      TRUE ~ "total")) |>
-  select(-demographic)
+  select(-demographic) |>
+  mutate(cps_cj = if_else(denominator %in% c("Incarcerated Parents",
+                                                 "Imprisoned People"), 
+                              "Criminal Justice Contact", "Child Protective Services Contact"))
 
 frequencies_pivoted |>
   ggplot(aes(x = proportion, y = clean_name, 
@@ -61,11 +64,16 @@ frequencies_pivoted |>
                                 "white" = 23, "total" = 21)) +
   theme_bw() +
   theme(strip.background = element_rect(fill = NA),
-          axis.title.y = element_blank(),
-          text = element_text(size = 12),
-          axis.text.y = element_markdown(),
-          plot.caption.position = "plot",
-          plot.caption = element_markdown(hjust = 0)) +
+        axis.title.y = element_blank(),
+        strip.text.x = element_text(
+          face = "bold",
+          size = 11,
+          margin = margin(t = 6, b = 6)
+        ),
+        text = element_text(size = 12),
+        axis.text.y = element_markdown(),
+        plot.caption.position = "plot",
+        plot.caption = element_markdown(hjust = 0)) +
   guides(fill = guide_legend(
     override.aes = list(shape = 21, color = "black"))) +
   scale_y_discrete(labels = label_wrap_gen((width = 25))) +
