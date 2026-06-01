@@ -12,49 +12,67 @@ library(tidyverse)
 library(dplyr)
 library(readxl)
 library(janitor)
+library(ggplot2)
+library(ggtext)
 ```
 
 ```{r}
 #| label: cps-pi-overlap
-frequencies_cps <- read_excel("Frequencies PI and Cxn.xlsx")
-frequencies_cps_copy <- read_excel("Frequencies PI and Cxn to CPS - Copy.xlsx")
-frequencies_cps_copy2 <- read_excel("Frequencies PI and Cxn to CPS - Copy2 (3).xlsx")
 
-frequencies_copy <- clean_names(frequencies_cps_copy)
-frequencies_cps <- clean_names(frequencies_cps)
-frequencies_copy2 <- clean_names(frequencies_cps_copy2)
+frequencies_cps <- read_excel("Frequencies PI and Cxn to CPS - Raw.xlsx")
+
+frequencies_cps <- clean_names(frequencies_cps) |>
+  mutate(denominator = case_match(denominator,
+                                  "imprisoned  people" ~ "Imprisoned People",
+                                  "incarcerated parents" ~ "Incarcerated Parents",
+                                  "foster care children" ~ "Foster Care Children",
+                                  "CPS-involved children" ~ "CPS Involved-Children"
+                                  ))
 ```
 
 ```{r}
 #| label: graph-
-#| fig-width: 9
+#| fig-width: 11
 #| fig-height: 4
-frequencies_pivoted <- frequencies_copy2 |>
-  pivot_longer(cols = c(overall, men, women, white, black, hispanic),
+frequencies_pivoted <- frequencies_cps |>
+  pivot_longer(cols = c(total, male, female, white, black, hispanic),
                names_to = "demographic",
                values_to = "proportion") |>
   filter(!is.na(proportion)) |>
   mutate(race = case_when(
     demographic %in% c("white", "black", "hispanic") ~ demographic,
-    TRUE ~ "overall"
+    TRUE ~ "total"
   ),
-  gender = case_when(demographic %in% c("men", "women") ~ demographic,
-                     TRUE ~ "overall")) |>
+  gender = case_when(demographic %in% c("male", "female") ~ demographic,
+                     TRUE ~ "total")) |>
   select(-demographic)
 
 frequencies_pivoted |>
   ggplot(aes(x = proportion, y = clean_name, 
-             color = race, shape = gender)) +
+             fill = gender, shape = race)) +
   geom_point(size = 2, 
-             position = position_jitter(height = .2), 
+             position = position_jitter(height = .15), 
+             color = "black",
              show.legend = TRUE) +
   facet_wrap(~denominator, scales = "free_y") +
+  scale_fill_manual(values = c("male" = "#86B6C3", "female" = "#D29141",
+                                "total" = "white")) +
+  scale_shape_manual(values = c("black" = 22, "hispanic" = 24, 
+                                "white" = 23, "total" = 21)) +
   theme_bw() +
+  theme(strip.background = element_rect(fill = NA),
+          axis.title.y = element_blank(),
+          text = element_text(size = 12),
+          axis.text.y = element_markdown(),
+          plot.caption.position = "plot",
+          plot.caption = element_markdown(hjust = 0)) +
   guides(fill = guide_legend(
     override.aes = list(shape = 21, color = "black"))) +
   scale_y_discrete(labels = label_wrap_gen((width = 25))) +
   xlim(0, 0.75) +
-  labs(title = "CPS and Parental Incarceration",
+  labs(title = "CPS Contact and Parental Incarceration",
        x = "Proportion of Total Population",
-       y = "Condition")
+       y = "Condition",
+       shape = "Race/Ethnicity",
+       fill = "Gender")
 ```
