@@ -11,7 +11,6 @@ editor: visual
 library(tidyverse)
 library(dplyr)
 library(readxl)
-library(janitor)
 library(ggplot2)
 library(ggtext)
 library(stringr)
@@ -21,9 +20,8 @@ library(stringr)
 #| label: read-data
 
 
-frequencies_renamed <- read_excel("Frequencies PI and Cxn to CPS - Updated Names.xlsx")
-frequencies_renamed <- clean_names(frequencies_renamed) |>
-  mutate(denominator = case_match(denominator,
+frequencies_renamed <- read_excel("Frequencies - PI and Cxn to CPS.xlsx") |>
+  mutate(denominator = recode_values(denominator,
                                   "imprisoned  people" ~ "Imprisoned People",
                                   "incarcerated parents" ~ "Incarcerated Parents",
                                   "foster care children" ~ "Foster Care Children",
@@ -37,12 +35,12 @@ frequencies_renamed <- clean_names(frequencies_renamed) |>
 #| fig-width: 11
 #| fig-height: 4
 frequencies_pivoted <- frequencies_renamed |>
-  pivot_longer(cols = c(total, male, female, white, black, hispanic),
+  pivot_longer(cols = c(total, male, female, White, Black, Hispanic),
                names_to = "demographic",
                values_to = "proportion") |>
   filter(!is.na(proportion)) |>
   mutate(race = case_when(
-    demographic %in% c("white", "black", "hispanic") ~ demographic,
+    demographic %in% c("White", "Black", "Hispanic") ~ demographic,
     TRUE ~ "total"
   ),
   gender = case_when(demographic %in% c("male", "female") ~ demographic,
@@ -50,7 +48,8 @@ frequencies_pivoted <- frequencies_renamed |>
   cps_cj = if_else(denominator %in% c("Incarcerated Parents",
                                                  "Imprisoned People"),
                           "Criminal Justice Contact", 
-                          "Child Protective Services Contact")) |>
+                          "Child Protective Services Contact"),
+  race = fct_relevel(race, "Hispanic", "Black", "White", "total")) |>
   select(-demographic)
 
 frequencies_pivoted |>
@@ -58,13 +57,19 @@ frequencies_pivoted |>
              fill = gender, shape = race)) +
   geom_point(size = 2, 
              position = position_jitter(height = .15), 
-             color = "black",
+             color = "Black",
              show.legend = TRUE) +
+  scale_y_discrete(labels = c("Parent arrested prior to CPS investigation" = 
+                                "Parent arrested prior<br>to CPS investigation",
+                              "Result of parental incarceration" = 
+                                "Result of parental<br>incarceration",
+                              "Experiencing parental incarceration" =
+                                "Experiencing parental<br>incarceration")) +
   facet_wrap(~denominator, scales = "free_y") +
   scale_fill_manual(values = c("male" = "#86B6C3", "female" = "#D29141",
                                 "total" = "white")) +
-  scale_shape_manual(values = c("black" = 22, "hispanic" = 24, 
-                                "white" = 23, "total" = 21)) +
+  scale_shape_manual(values = c("Black" = 22, "Hispanic" = 24, 
+                                "White" = 23, "total" = 21)) +
   theme_bw() +
   theme(strip.background = element_rect(fill = NA),
         axis.title.y = element_blank(),
@@ -79,13 +84,14 @@ frequencies_pivoted |>
         plot.caption.position = "plot",
         plot.caption = element_markdown(hjust = 0)) +
   guides(fill = guide_legend(
-    override.aes = list(shape = 21, color = "black"))) +
+    override.aes = list(shape = 21, color = "Black"))) +
   xlim(0, 0.75) +
   labs(title = "CPS Contact and Parental Incarceration",
        x = "Proportion of Population",
        y = "Condition",
        shape = "Race/Ethnicity",
        fill = "Gender")
+
 ```
 
 ```{r}
@@ -93,12 +99,12 @@ frequencies_pivoted |>
 #| fig-width: 15
 #| fig-height: 4
 frequencies_mutated <- frequencies_renamed |>
-  pivot_longer(cols = c(total, male, female, white, black, hispanic),
+  pivot_longer(cols = c(total, male, female, White, Black, Hispanic),
                names_to = "demographic",
                values_to = "proportion") |>
   filter(!is.na(proportion)) |>
   mutate(race = case_when(
-    demographic %in% c("white", "black", "hispanic") ~ demographic,
+    demographic %in% c("White", "Black", "Hispanic") ~ demographic,
     TRUE ~ "total"),
   gender = case_when(demographic %in% c("male", "female") ~ demographic,
                      TRUE ~ "total"),
@@ -107,6 +113,7 @@ frequencies_mutated <- frequencies_renamed |>
     str_detect(clean_name, "Parental incarceration") ~ "Foster care and CPS-involved children",
     str_detect(clean_name, "Parent arrested") ~ "Foster care and CPS-involved children",
     TRUE ~ "Incarcerated people"),
+  race = fct_relevel(race, "Hispanic", "Black", "White", "total")
   ) |>
   select(-demographic)
 
@@ -115,13 +122,19 @@ frequencies_mutated |>
              fill = gender, shape = race)) +
   geom_point(size = 2, 
              position = position_jitter(height = .15), 
-             color = "black",
+             color = "Black",
              show.legend = TRUE) +
+  scale_y_discrete(labels = c("Parent arrested prior to CPS investigation" = 
+                                "Parent arrested prior<br>to CPS investigation",
+                              "Result of parental incarceration" = 
+                                "Result of parental<br>incarceration",
+                              "Experiencing parental incarceration" =
+                                "Experiencing parental<br>incarceration")) +
   facet_wrap(~alt_denominator, scales = "free_y") +
   scale_fill_manual(values = c("male" = "#86B6C3", "female" = "#D29141",
-                                "total" = "white")) +
-  scale_shape_manual(values = c("black" = 22, "hispanic" = 24, 
-                                "white" = 23, "total" = 21)) +
+                                "total" = "White")) +
+  scale_shape_manual(values = c("Black" = 22, "Hispanic" = 24, 
+                                "White" = 23, "total" = 21)) +
   theme_bw() +
   theme(strip.background = element_rect(fill = NA),
         axis.title.y = element_blank(),
@@ -136,7 +149,7 @@ frequencies_mutated |>
         plot.caption.position = "plot",
         plot.caption = element_markdown(hjust = 0)) +
   guides(fill = guide_legend(
-    override.aes = list(shape = 21, color = "black"))) +
+    override.aes = list(shape = 21, color = "Black"))) +
   xlim(0, 0.75) +
   labs(title = "CPS Contact and Parental Incarceration",
        x = "Proportion of Population",
